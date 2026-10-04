@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Recovery — Magical Tracker</title>
+<style>
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#fffaf7;color:#3d302f;margin:0;padding:40px} .wrap{max-width:900px;margin:auto}.card{background:#fff;border:1px solid #eadfd9;border-radius:24px;padding:24px;box-shadow:0 18px 40px rgba(87,58,50,.10)}h1{font-family:Georgia,serif;font-size:48px;margin:0 0 10px}.muted{color:#83716d}.btn{border:0;border-radius:14px;padding:11px 15px;background:#6c514b;color:white;cursor:pointer}.cloud{margin-top:20px;padding:16px;background:#f6eeee;border-radius:18px}input{width:100%;padding:11px;border:1px solid #ddcfc8;border-radius:12px;box-sizing:border-box}.status{font-size:13px;color:#83716d;margin-top:8px}</style>
+</head>
+<body><div class="wrap"><div class="card"><h1>English Recovery</h1><p class="muted">Твое пространство, где английский возвращается в активную речь.</p><div class="cloud"><strong>☁ Cloud Sync</strong><p class="muted">Введите один и тот же код на всех устройствах.</p><input id="syncCode" type="password" placeholder="Код синхронизации"><div style="margin-top:10px"><button class="btn" onclick="cloudLoad()">Загрузить из облака</button> <button class="btn" onclick="cloudSave()">Сохранить в облако</button></div><div id="cloudStatus" class="status"></div></div><p style="margin-top:24px">Основная версия трекера будет размещена здесь после финальной загрузки файла.</p></div></div>
+<script>
+const CLOUD_URL='https://hgnknudyulbstpzjmqni.supabase.co/functions/v1/english-recovery-sync';
+const KEY='englishRecoveryTracker_magic_v1'; const SYNC_KEY='englishRecoveryTracker_sync_code';
+let state={entries:[],settings:{}}; try{state=JSON.parse(localStorage.getItem(KEY))||state}catch(e){}
+const el=id=>document.getElementById(id); if(el('syncCode'))el('syncCode').value=localStorage.getItem(SYNC_KEY)||'';
+function code(){return (el('syncCode').value||'').trim()} function msg(t){el('cloudStatus').textContent=t}
+async function req(action,payload={}){if(code().length<6){alert('Придумай код минимум из 6 символов');throw new Error('short')}localStorage.setItem(SYNC_KEY,code());msg('Синхронизация…');const r=await fetch(CLOUD_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,code:code(),...payload})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Ошибка');return d}
+async function cloudSave(){try{await req('push',{state});msg('✓ Сохранено в облаке')}catch(e){if(e.message!=='short')msg('Ошибка: '+e.message)}}
+async function cloudLoad(){try{const d=await req('pull');if(d.state){state=d.state;localStorage.setItem(KEY,JSON.stringify(state));msg('✓ Данные загружены')}else{await cloudSave();msg('✓ Облако подключено')}}catch(e){if(e.message!=='short')msg('Ошибка: '+e.message)}}
+</script></body></html>
